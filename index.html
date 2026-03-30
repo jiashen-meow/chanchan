@@ -460,13 +460,13 @@ html, body {
 
 /* Scroll-triggered fade */
 .reveal {
-  opacity: 0;
-  transform: translateY(24px);
-  transition: opacity 0.7s ease, transform 0.7s ease;
-}
-.reveal.visible {
   opacity: 1;
   transform: translateY(0);
+  transition: opacity 0.7s ease, transform 0.7s ease;
+}
+.reveal.hidden {
+  opacity: 0;
+  transform: translateY(24px);
 }
 .reveal-delay-1 { transition-delay: 0.1s; }
 .reveal-delay-2 { transition-delay: 0.2s; }
@@ -614,16 +614,17 @@ html, body {
 </div>
 
 <script>
-// Scroll reveal
+// Scroll reveal — start hidden, animate in when visible
 const reveals = document.querySelectorAll(".reveal");
+reveals.forEach(el => el.classList.add("hidden"));
 const observer = new IntersectionObserver(entries => {
   entries.forEach(e => {
     if (e.isIntersecting) {
-      e.target.classList.add("visible");
+      e.target.classList.remove("hidden");
       observer.unobserve(e.target);
     }
   });
-}, { threshold: 0.15 });
+}, { threshold: 0.1 });
 reveals.forEach(el => observer.observe(el));
 <\/script>
 </body>
