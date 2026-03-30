@@ -472,6 +472,483 @@ html, body {
 .reveal-delay-2 { transition-delay: 0.2s; }
 .reveal-delay-3 { transition-delay: 0.3s; }
 .reveal-delay-4 { transition-delay: 0.4s; }
+
+/* ════════════════════════
+   GAME ENGINE
+════════════════════════ */
+
+/* Step indicator */
+.step-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  margin-bottom: 20px;
+  padding: 0 4px;
+}
+.si-node {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 1.5px solid rgba(200,168,75,0.3);
+  background: rgba(245,240,232,0.6);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 10px; font-weight: 700;
+  color: rgba(44,36,22,0.35);
+  flex-shrink: 0;
+  transition: all 0.4s;
+  backdrop-filter: blur(4px);
+}
+.si-node.active {
+  border-color: var(--gold);
+  color: var(--gold);
+  background: rgba(245,240,232,0.9);
+  box-shadow: 0 0 10px rgba(200,168,75,0.3);
+}
+.si-node.done {
+  background: var(--cloisonne-teal);
+  border-color: var(--cloisonne-teal);
+  color: #fff;
+}
+.si-line {
+  flex: 1; height: 1px;
+  background: rgba(200,168,75,0.2);
+  transition: background 0.4s;
+}
+.si-line.done { background: var(--cloisonne-teal); }
+.si-label-row {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  margin-bottom: 20px;
+  padding: 0 2px;
+}
+.si-label {
+  font-size: 8px;
+  color: rgba(44,36,22,0.4);
+  letter-spacing: 1px;
+  width: 28px;
+  text-align: center;
+}
+.si-label.active { color: var(--gold-dark); font-weight: 700; }
+
+/* Game panel base */
+.game-step {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+  padding: 0 4px;
+}
+.game-step.active { display: flex; }
+
+.step-title-row {
+  text-align: center;
+  margin-bottom: 16px;
+}
+.step-num-label {
+  font-size: 9px; letter-spacing: 4px;
+  color: var(--gold); margin-bottom: 4px;
+}
+.step-big-title {
+  font-size: 20px; font-weight: 700;
+  color: var(--ink); letter-spacing: 4px;
+}
+.step-hint {
+  font-size: 11px;
+  color: rgba(44,36,22,0.5);
+  letter-spacing: 1px;
+  text-align: center;
+  margin-bottom: 14px;
+  min-height: 18px;
+}
+
+/* Game card frame */
+.game-card {
+  width: 100%;
+  background: rgba(245,240,232,0.82);
+  border: 1px solid rgba(200,168,75,0.35);
+  border-radius: 10px;
+  padding: 20px 16px;
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  position: relative;
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+.game-card::before {
+  content: "";
+  position: absolute;
+  top: 0; left: 16px; right: 16px; height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+
+/* Progress bar */
+.prog-wrap {
+  width: 100%;
+  margin-bottom: 12px;
+}
+.prog-track {
+  height: 4px;
+  background: rgba(200,168,75,0.15);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.prog-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--cloisonne-blue), var(--cloisonne-teal), var(--gold));
+  border-radius: 2px;
+  width: 0%;
+  transition: width 0.3s;
+}
+.prog-label {
+  display: flex; justify-content: space-between;
+  margin-bottom: 6px;
+  font-size: 10px; color: rgba(44,36,22,0.45); letter-spacing: 1px;
+}
+
+/* Next button */
+.btn-next {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--cloisonne-blue), var(--cloisonne-deep));
+  border: none; border-radius: 8px;
+  color: #fff;
+  font-family: "Noto Serif SC", serif;
+  font-size: 13px; letter-spacing: 3px;
+  cursor: pointer;
+  opacity: 0.3; pointer-events: none;
+  transition: all 0.3s;
+  margin-top: 4px;
+}
+.btn-next.ready {
+  opacity: 1; pointer-events: all;
+  box-shadow: 0 4px 16px rgba(42,95,158,0.25);
+}
+.btn-next.ready:active { transform: scale(0.98); }
+
+/* ── STEP 1: DRAW ── */
+#draw-wrap {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(245,240,232,0.5);
+  margin-bottom: 12px;
+  touch-action: none;
+}
+#guide-svg {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+}
+#draw-canvas {
+  position: absolute; inset: 0;
+  width: 100%; height: 100%;
+  cursor: crosshair;
+  touch-action: none;
+}
+
+/* ── STEP 2: WIRE ── */
+.wire-board {
+  position: relative;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 6px;
+  overflow: visible;
+  margin-bottom: 12px;
+  background: rgba(245,240,232,0.4);
+  touch-action: none;
+}
+#wire-display-svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+.drop-zone {
+  position: absolute;
+  border: 1.5px dashed rgba(200,168,75,0.35);
+  border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+.drop-zone.highlight {
+  border-color: var(--gold);
+  background: rgba(200,168,75,0.1);
+  animation: dzpulse 0.8s ease-in-out infinite;
+}
+@keyframes dzpulse {
+  0%,100% { box-shadow: 0 0 0 0 rgba(200,168,75,0.3); }
+  50% { box-shadow: 0 0 0 6px rgba(200,168,75,0); }
+}
+.drop-zone.filled {
+  border-style: solid;
+  border-color: var(--gold);
+  background: rgba(200,168,75,0.08);
+}
+.dz-label {
+  font-size: 8px; letter-spacing: 1px;
+  color: rgba(200,168,75,0.5);
+  pointer-events: none;
+}
+.drop-zone.filled .dz-label { color: var(--gold-dark); }
+
+.wire-tray {
+  display: flex; flex-wrap: wrap; gap: 8px;
+  justify-content: center;
+}
+.wire-piece {
+  padding: 7px 14px;
+  background: rgba(245,240,232,0.9);
+  border: 1px solid rgba(200,168,75,0.4);
+  border-radius: 20px;
+  font-size: 11px; color: var(--gold-dark);
+  letter-spacing: 1px;
+  cursor: grab;
+  user-select: none;
+  transition: all 0.2s;
+  position: relative;
+}
+.wire-piece:active { cursor: grabbing; transform: scale(1.05); }
+.wire-piece.dragging {
+  opacity: 0.5;
+  pointer-events: none;
+}
+.wire-piece.used {
+  opacity: 0.25;
+  pointer-events: none;
+  text-decoration: line-through;
+}
+
+/* Floating drag ghost */
+#drag-ghost {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9999;
+  padding: 7px 14px;
+  background: rgba(200,168,75,0.9);
+  border-radius: 20px;
+  font-size: 11px; color: #fff;
+  letter-spacing: 1px;
+  font-family: "Noto Serif SC", serif;
+  display: none;
+  transform: translate(-50%, -50%);
+  box-shadow: 0 4px 16px rgba(200,168,75,0.4);
+}
+
+/* ── STEP 3: COLOR ── */
+#color-svg-wrap {
+  width: 100%;
+  aspect-ratio: 1;
+  position: relative;
+  margin-bottom: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: rgba(245,240,232,0.4);
+}
+#shovel-color-svg {
+  width: 100%; height: 100%;
+  display: block;
+}
+.color-region { cursor: pointer; transition: filter 0.2s; }
+.color-region:hover { filter: brightness(1.1); }
+.color-region.filled { cursor: default; }
+
+.color-palette {
+  display: flex; gap: 10px; flex-wrap: wrap;
+  justify-content: center;
+}
+.color-dot {
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  cursor: pointer;
+  border: 2.5px solid transparent;
+  transition: all 0.2s;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+.color-dot.selected {
+  border-color: var(--ink);
+  transform: scale(1.18);
+}
+.color-dot:active { transform: scale(1.05); }
+.color-selected-name {
+  font-size: 10px; color: var(--gold-dark);
+  letter-spacing: 2px; margin-top: 8px;
+  text-align: center; min-height: 16px;
+}
+
+/* ── STEP 4: KILN ── */
+.kiln-game-wrap {
+  width: 100%;
+  display: flex; flex-direction: column;
+  align-items: center; gap: 20px;
+}
+.fire-meter-wrap {
+  width: 100%;
+  position: relative;
+}
+.fire-meter-label {
+  display: flex; justify-content: space-between;
+  font-size: 10px; color: rgba(44,36,22,0.45);
+  letter-spacing: 1px; margin-bottom: 8px;
+}
+.fire-meter-track {
+  width: 100%; height: 28px;
+  background: rgba(200,168,75,0.1);
+  border: 1px solid rgba(200,168,75,0.3);
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+.fire-zone {
+  position: absolute;
+  top: 0; height: 100%;
+  background: linear-gradient(90deg, rgba(200,168,75,0.3), rgba(200,168,75,0.6), rgba(200,168,75,0.3));
+  border-radius: 4px;
+  transition: left 0.1s;
+}
+.fire-needle {
+  position: absolute;
+  top: -4px; bottom: -4px;
+  width: 3px;
+  background: var(--cloisonne-deep);
+  border-radius: 2px;
+  transition: left 0.016s linear;
+  box-shadow: 0 0 6px rgba(42,95,158,0.5);
+}
+.fire-needle::before {
+  content: "▼";
+  position: absolute;
+  top: -14px; left: 50%;
+  transform: translateX(-50%);
+  font-size: 8px;
+  color: var(--cloisonne-deep);
+}
+
+.kiln-tap-btn {
+  width: 100px; height: 100px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(200,72,48,0.15), rgba(200,72,48,0.05));
+  border: 2px solid rgba(200,72,48,0.4);
+  display: flex; flex-direction: column;
+  align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.15s;
+  gap: 4px;
+}
+.kiln-tap-btn:active {
+  transform: scale(0.92);
+  background: radial-gradient(circle, rgba(200,72,48,0.3), rgba(200,72,48,0.1));
+}
+.kiln-tap-icon { font-size: 32px; }
+.kiln-tap-label {
+  font-size: 9px; letter-spacing: 2px;
+  color: rgba(200,72,48,0.7);
+}
+
+.fire-count-row {
+  display: flex; gap: 10px; align-items: center;
+  justify-content: center;
+}
+.fire-dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: rgba(200,168,75,0.2);
+  border: 1.5px solid rgba(200,168,75,0.3);
+  transition: all 0.3s;
+}
+.fire-dot.lit {
+  background: var(--gold);
+  border-color: var(--gold-dark);
+  box-shadow: 0 0 8px rgba(200,168,75,0.5);
+}
+.fire-dot.miss {
+  background: rgba(200,72,48,0.4);
+  border-color: rgba(200,72,48,0.6);
+}
+.kiln-feedback {
+  font-size: 12px; letter-spacing: 2px;
+  min-height: 20px; text-align: center;
+  transition: all 0.3s;
+}
+.kiln-feedback.hit { color: var(--gold-dark); }
+.kiln-feedback.miss { color: rgba(200,72,48,0.8); }
+
+/* ── DONE PAGE ── */
+#done-page {
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  max-width: 340px;
+  padding: 0 4px;
+  text-align: center;
+}
+#done-page.active { display: flex; }
+.done-emblem {
+  width: 110px; height: 110px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold-dark));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 48px;
+  margin-bottom: 20px;
+  box-shadow: 0 8px 32px rgba(200,168,75,0.35);
+  animation: popIn 0.7s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn {
+  from { transform: scale(0) rotate(-90deg); opacity: 0; }
+  to   { transform: scale(1) rotate(0); opacity: 1; }
+}
+.done-title {
+  font-size: 24px; font-weight: 900;
+  color: var(--ink); letter-spacing: 6px;
+  margin-bottom: 6px;
+}
+.done-sub {
+  font-size: 12px; color: rgba(44,36,22,0.55);
+  line-height: 2; letter-spacing: 1px;
+  margin-bottom: 24px;
+}
+.coupon-card {
+  width: 100%;
+  background: rgba(245,240,232,0.9);
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  padding: 20px 24px;
+  position: relative;
+  margin-bottom: 20px;
+  text-align: center;
+  backdrop-filter: blur(6px);
+}
+.coupon-card::before {
+  content: "";
+  position: absolute; top: 0; left: 16px; right: 16px; height: 1.5px;
+  background: linear-gradient(90deg, transparent, var(--gold), transparent);
+}
+.coupon-notch {
+  position: absolute; width: 20px; height: 20px;
+  border-radius: 50%; background: rgba(245,240,232,0.6);
+  border: 1px solid rgba(200,168,75,0.3);
+  top: 50%; transform: translateY(-50%);
+}
+.coupon-notch.l { left: -10px; }
+.coupon-notch.r { right: -10px; }
+.coupon-eyebrow { font-size: 9px; letter-spacing: 3px; color: rgba(44,36,22,0.4); margin-bottom: 4px; }
+.coupon-val { font-size: 52px; font-weight: 900; color: var(--gold-dark); line-height: 1; }
+.coupon-unit { font-size: 18px; }
+.coupon-note { font-size: 10px; color: rgba(44,36,22,0.4); margin-top: 4px; letter-spacing: 1px; }
+.btn-shop {
+  width: 100%;
+  padding: 14px;
+  background: linear-gradient(135deg, var(--cloisonne-blue), var(--cloisonne-deep));
+  border: none; border-radius: 8px;
+  color: #fff;
+  font-family: "Noto Serif SC", serif;
+  font-size: 13px; letter-spacing: 3px;
+  cursor: pointer;
+  box-shadow: 0 4px 16px rgba(42,95,158,0.25);
+  transition: all 0.2s;
+}
+.btn-shop:active { transform: scale(0.98); }
+
 </style>
 </head>
 <body>
@@ -487,96 +964,230 @@ html, body {
 
 </div>
 
-<!-- ════ PAGE 2: GAME PLACEHOLDER ════ -->
+<!-- ════ PAGE 2: GAME ════ -->
 <div class="page" id="page2">
 
-  <div class="page2-header reveal">
+  <div class="page2-header reveal" style="margin-bottom:16px">
     <div class="p2-eyebrow">非遗体验</div>
     <div class="p2-title">亲手做一件</div>
     <div class="p2-sub">景泰蓝工艺 · 四道工序</div>
   </div>
 
-  <!-- 4 Step Cards -->
-  <div class="steps-grid">
-    <div class="step-card reveal reveal-delay-1">
-      <div class="step-num">STEP 01</div>
-      <svg class="step-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="#c8a84b" stroke-width="1" opacity="0.4"/>
-        <!-- Brush strokes -->
-        <path d="M12,36 Q18,26 24,24 Q30,22 36,14" stroke="#2a5f9e" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M10,30 Q16,28 20,32" stroke="#1e8c7a" stroke-width="1.5" fill="none" stroke-linecap="round"/>
-        <!-- Brush tip -->
-        <path d="M34,12 L38,8 L40,12 L36,14 Z" fill="#c8a84b"/>
-        <!-- Guide dots -->
-        <circle cx="24" cy="24" r="2" fill="none" stroke="#c8a84b" stroke-width="0.8" stroke-dasharray="2,1"/>
-      </svg>
-      <div class="step-name">描图案</div>
-      <div class="step-name-en">SKETCH</div>
+  <!-- Step indicator -->
+  <div style="width:100%;max-width:340px;padding:0 4px">
+    <div class="step-indicator" id="step-indicator">
+      <div class="si-node active" id="si1">一</div>
+      <div class="si-line" id="sl1"></div>
+      <div class="si-node" id="si2">二</div>
+      <div class="si-line" id="sl2"></div>
+      <div class="si-node" id="si3">三</div>
+      <div class="si-line" id="sl3"></div>
+      <div class="si-node" id="si4">四</div>
     </div>
-
-    <div class="step-card reveal reveal-delay-2">
-      <div class="step-num">STEP 02</div>
-      <svg class="step-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="#c8a84b" stroke-width="1" opacity="0.4"/>
-        <!-- Wire coils -->
-        <path d="M10,16 Q18,10 26,16 Q34,22 42,16" stroke="#c8a84b" stroke-width="1.5" fill="none"/>
-        <path d="M10,24 Q18,18 26,24 Q34,30 42,24" stroke="#c8a84b" stroke-width="1.5" fill="none"/>
-        <path d="M10,32 Q18,26 26,32 Q34,38 42,32" stroke="#c8a84b" stroke-width="1.5" fill="none"/>
-        <!-- Wire cross lines -->
-        <line x1="20" y1="12" x2="20" y2="36" stroke="#c8a84b" stroke-width="0.8" opacity="0.4"/>
-        <line x1="32" y1="12" x2="32" y2="36" stroke="#c8a84b" stroke-width="0.8" opacity="0.4"/>
-      </svg>
-      <div class="step-name">掐丝</div>
-      <div class="step-name-en">WIRE</div>
-    </div>
-
-    <div class="step-card reveal reveal-delay-3">
-      <div class="step-num">STEP 03</div>
-      <svg class="step-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="#c8a84b" stroke-width="1" opacity="0.4"/>
-        <!-- Enamel cells -->
-        <path d="M8,8 L22,8 L22,22 L8,22 Z" fill="#2a5f9e" stroke="#c8a84b" stroke-width="1" opacity="0.8"/>
-        <path d="M24,8 L40,8 L40,22 L24,22 Z" fill="#1e8c7a" stroke="#c8a84b" stroke-width="1" opacity="0.8"/>
-        <path d="M8,24 L22,24 L22,40 L8,40 Z" fill="#1e8c7a" stroke="#c8a84b" stroke-width="1" opacity="0.8"/>
-        <path d="M24,24 L40,24 L40,40 L24,40 Z" fill="#c04830" stroke="#c8a84b" stroke-width="1" opacity="0.6"/>
-        <!-- Drop icon -->
-        <path d="M32,27 Q32,34 36,34 Q40,34 40,30 Q40,27 36,25 Z" fill="#3a6fae" opacity="0.6"/>
-      </svg>
-      <div class="step-name">点蓝</div>
-      <div class="step-name-en">ENAMEL</div>
-    </div>
-
-    <div class="step-card reveal reveal-delay-4">
-      <div class="step-num">STEP 04</div>
-      <svg class="step-icon" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
-        <rect x="4" y="4" width="40" height="40" rx="4" fill="none" stroke="#c8a84b" stroke-width="1" opacity="0.4"/>
-        <!-- Kiln circle -->
-        <circle cx="24" cy="24" r="14" fill="none" stroke="#c04830" stroke-width="1.5" opacity="0.5"/>
-        <circle cx="24" cy="24" r="9" fill="rgba(200,72,48,0.15)" stroke="#c04830" stroke-width="1" opacity="0.6"/>
-        <!-- Flame shapes -->
-        <path d="M20,30 Q18,24 22,20 Q21,26 24,22 Q23,28 26,24 Q28,20 30,22 Q27,26 28,30 Z"
-              fill="#c04830" opacity="0.7"/>
-        <!-- Sparkles -->
-        <circle cx="16" cy="18" r="1.5" fill="#e8cc78" opacity="0.7"/>
-        <circle cx="32" cy="16" r="1.5" fill="#e8cc78" opacity="0.7"/>
-        <circle cx="34" cy="30" r="1" fill="#e8cc78" opacity="0.5"/>
-      </svg>
-      <div class="step-name">烧制</div>
-      <div class="step-name-en">FIRE</div>
+    <div class="si-label-row">
+      <div class="si-label active" id="sl-1">描图案</div>
+      <div class="si-label" id="sl-2">掐丝</div>
+      <div class="si-label" id="sl-3">点蓝</div>
+      <div class="si-label" id="sl-4">烧制</div>
     </div>
   </div>
 
-  <!-- Coming soon label -->
-  <div class="coming-soon-wrap reveal">
-    <div class="coming-label">
-      <span>· 互动体验即将开启 ·</span>
+  <!-- STEP 1: DRAW -->
+  <div class="game-step active" id="gs1">
+    <div class="step-title-row">
+      <div class="step-num-label">STEP 01</div>
+      <div class="step-big-title">描图案</div>
+    </div>
+    <div class="step-hint" id="draw-hint">用手指沿虚线描绘铲子轮廓</div>
+    <div class="game-card">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>描绘进度</span><span id="draw-pct">0%</span></div>
+        <div class="prog-track"><div class="prog-bar" id="draw-bar"></div></div>
+      </div>
+      <div id="draw-wrap">
+        <svg id="guide-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+          <!-- Background wash -->
+          <rect width="300" height="300" fill="rgba(245,240,232,0.3)"/>
+          <!-- Shovel guide path — dashed gold outline -->
+          <!-- Blade outer -->
+          <path d="M150,20 L210,55 L200,140 L150,158 L100,140 L90,55 Z"
+                fill="none" stroke="#c8a84b" stroke-width="2.5"
+                stroke-dasharray="6,4" opacity="0.55" id="guide-blade"/>
+          <!-- Handle -->
+          <line x1="150" y1="158" x2="150" y2="225"
+                stroke="#c8a84b" stroke-width="2.5" stroke-dasharray="5,4" opacity="0.55"/>
+          <!-- Grip -->
+          <path d="M118,225 Q150,218 182,225 Q150,232 118,225 Z"
+                fill="none" stroke="#c8a84b" stroke-width="2.5"
+                stroke-dasharray="5,4" opacity="0.55"/>
+          <!-- Inner blade detail -->
+          <path d="M150,30 L200,60 L192,130 L150,145 L108,130 L100,60 Z"
+                fill="none" stroke="#c8a84b" stroke-width="1.2"
+                stroke-dasharray="4,4" opacity="0.3"/>
+          <!-- Center medallion -->
+          <circle cx="150" cy="90" r="28"
+                  fill="none" stroke="#c8a84b" stroke-width="1.5"
+                  stroke-dasharray="4,3" opacity="0.35"/>
+          <!-- Hint dots at key points -->
+          <circle cx="150" cy="20" r="3" fill="#c8a84b" opacity="0.5"/>
+          <circle cx="210" cy="55" r="3" fill="#c8a84b" opacity="0.5"/>
+          <circle cx="200" cy="140" r="3" fill="#c8a84b" opacity="0.5"/>
+          <circle cx="100" cy="140" r="3" fill="#c8a84b" opacity="0.5"/>
+          <circle cx="90" cy="55" r="3" fill="#c8a84b" opacity="0.5"/>
+          <circle cx="150" cy="225" r="3" fill="#c8a84b" opacity="0.5"/>
+        </svg>
+        <canvas id="draw-canvas" width="300" height="300"></canvas>
+      </div>
+    </div>
+    <button class="btn-next" id="btn-next-1" onclick="goToStep(2)">下一步 · 掐丝 →</button>
+  </div>
+
+  <!-- STEP 2: WIRE -->
+  <div class="game-step" id="gs2">
+    <div class="step-title-row">
+      <div class="step-num-label">STEP 02</div>
+      <div class="step-big-title">掐丝</div>
+    </div>
+    <div class="step-hint" id="wire-hint">拖拽金丝放到铲子对应区域</div>
+    <div class="game-card">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>放置进度</span><span id="wire-pct">0 / 5</span></div>
+        <div class="prog-track"><div class="prog-bar" id="wire-bar"></div></div>
+      </div>
+      <div class="wire-board" id="wire-board">
+        <svg id="wire-display-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+          <rect width="300" height="300" fill="rgba(245,240,232,0.3)" rx="6"/>
+          <!-- Shovel silhouette (faint) -->
+          <path d="M150,20 L210,55 L200,140 L150,158 L100,140 L90,55 Z"
+                fill="rgba(200,168,75,0.06)" stroke="rgba(200,168,75,0.2)" stroke-width="1"/>
+          <line x1="150" y1="158" x2="150" y2="225" stroke="rgba(200,168,75,0.2)" stroke-width="1"/>
+          <path d="M118,225 Q150,218 182,225" fill="none" stroke="rgba(200,168,75,0.2)" stroke-width="1"/>
+        </svg>
+        <!-- Drop zones -->
+        <div class="drop-zone" id="dz0" data-idx="0" style="top:2%;left:28%;width:44%;height:20%">
+          <span class="dz-label">刀头</span></div>
+        <div class="drop-zone" id="dz1" data-idx="1" style="top:22%;left:18%;width:64%;height:24%">
+          <span class="dz-label">刀身</span></div>
+        <div class="drop-zone" id="dz2" data-idx="2" style="top:46%;left:36%;width:28%;height:20%">
+          <span class="dz-label">中心</span></div>
+        <div class="drop-zone" id="dz3" data-idx="3" style="top:66%;left:44%;width:12%;height:20%">
+          <span class="dz-label">柄</span></div>
+        <div class="drop-zone" id="dz4" data-idx="4" style="top:86%;left:30%;width:40%;height:10%">
+          <span class="dz-label">握把</span></div>
+      </div>
+      <div class="wire-tray" id="wire-tray" style="margin-top:12px"></div>
+    </div>
+    <button class="btn-next" id="btn-next-2" onclick="goToStep(3)">下一步 · 点蓝 →</button>
+  </div>
+
+  <!-- STEP 3: COLOR -->
+  <div class="game-step" id="gs3">
+    <div class="step-title-row">
+      <div class="step-num-label">STEP 03</div>
+      <div class="step-big-title">点蓝</div>
+    </div>
+    <div class="step-hint" id="color-hint">选色料，点击区域填入珐琅</div>
+    <div class="game-card">
+      <div class="prog-wrap">
+        <div class="prog-label"><span>填色进度</span><span id="color-pct">0 / 6</span></div>
+        <div class="prog-track"><div class="prog-bar" id="color-bar"></div></div>
+      </div>
+      <div id="color-svg-wrap">
+        <svg id="shovel-color-svg" viewBox="0 0 300 300" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="g1" x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0%" stop-color="#c8a84b"/>
+              <stop offset="100%" stop-color="#8a6e28"/>
+            </linearGradient>
+          </defs>
+          <rect width="300" height="300" fill="rgba(245,240,232,0.3)" rx="6"/>
+          <!-- Blade top region -->
+          <path id="cr0" class="color-region" onclick="fillRegion(0)"
+                d="M150,22 L206,55 L200,88 L150,98 L100,88 L94,55 Z"
+                fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          <!-- Blade mid left -->
+          <path id="cr1" class="color-region" onclick="fillRegion(1)"
+                d="M94,55 L100,88 L96,138 L112,150 L100,140 L90,55 Z"
+                fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          <!-- Blade mid right -->
+          <path id="cr2" class="color-region" onclick="fillRegion(2)"
+                d="M206,55 L210,140 L200,150 L204,138 L200,88 Z"
+                fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          <!-- Center medallion -->
+          <circle id="cr3" class="color-region" onclick="fillRegion(3)"
+                  cx="150" cy="90" r="28"
+                  fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          <!-- Blade bottom -->
+          <path id="cr4" class="color-region" onclick="fillRegion(4)"
+                d="M100,88 L200,88 L200,140 L150,158 L100,140 Z"
+                fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          <!-- Handle + grip -->
+          <g id="cr5" class="color-region" onclick="fillRegion(5)" style="cursor:pointer">
+            <rect x="144" y="158" width="12" height="67" rx="4"
+                  fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+            <path d="M118,225 Q150,218 182,225 Q150,232 118,225 Z"
+                  fill="#e8e0d0" stroke="#c8a84b" stroke-width="1.5"/>
+          </g>
+          <!-- Gold wire overlay (always on top) -->
+          <path d="M150,22 L206,55 L210,140 L150,158 L90,140 L94,55 Z"
+                fill="none" stroke="#c8a84b" stroke-width="1.8" pointer-events="none"/>
+          <circle cx="150" cy="90" r="28" fill="none" stroke="#c8a84b" stroke-width="1.2" pointer-events="none"/>
+          <line x1="150" y1="158" x2="150" y2="225" stroke="#c8a84b" stroke-width="1.8" pointer-events="none"/>
+          <path d="M118,225 Q150,218 182,225 Q150,232 118,225 Z" fill="none" stroke="#c8a84b" stroke-width="1.8" pointer-events="none"/>
+          <line x1="94" y1="88" x2="206" y2="88" stroke="#c8a84b" stroke-width="1" opacity="0.6" pointer-events="none"/>
+        </svg>
+      </div>
+      <div class="color-palette" id="color-palette" style="margin-top:12px"></div>
+      <div class="color-selected-name" id="color-name">请选择色料</div>
+    </div>
+    <button class="btn-next" id="btn-next-3" onclick="goToStep(4)">下一步 · 烧制 →</button>
+  </div>
+
+  <!-- STEP 4: KILN -->
+  <div class="game-step" id="gs4">
+    <div class="step-title-row">
+      <div class="step-num-label">STEP 04</div>
+      <div class="step-big-title">烧制</div>
+    </div>
+    <div class="step-hint" id="kiln-hint">指针进入金色区域时点击 · 需成功 3 次</div>
+    <div class="game-card">
+      <div class="kiln-game-wrap">
+        <div class="fire-count-row" id="fire-dots"></div>
+        <div class="fire-meter-wrap">
+          <div class="fire-meter-label">
+            <span>低温</span><span id="kiln-temp-label">待机中</span><span>高温</span>
+          </div>
+          <div class="fire-meter-track" id="fire-track">
+            <div class="fire-zone" id="fire-zone"></div>
+            <div class="fire-needle" id="fire-needle"></div>
+          </div>
+        </div>
+        <button class="kiln-tap-btn" id="kiln-tap" onclick="tapKiln()">
+          <div class="kiln-tap-icon">🔥</div>
+          <div class="kiln-tap-label">点击烧制</div>
+        </button>
+        <div class="kiln-feedback" id="kiln-feedback"></div>
+      </div>
     </div>
   </div>
 
-  <!-- CTA -->
-  <button class="cta-btn reveal" onclick="alert('跳转至游戏内商城')">
-    进入游戏查看棋盘皮肤 →
-  </button>
+  <!-- DONE -->
+  <div id="done-page">
+    <div class="done-emblem">🏆</div>
+    <div class="done-title">千火成蓝</div>
+    <div class="done-sub">
+      恭喜完成一件景泰蓝铲子<br>
+      掐丝之精、点蓝之美，历经千火
+    </div>
+    <div class="coupon-card">
+      <div class="coupon-notch l"></div>
+      <div class="coupon-notch r"></div>
+      <div class="coupon-eyebrow">专 属 优 惠 券</div>
+      <div class="coupon-val">9<span class="coupon-unit">折</span></div>
+      <div class="coupon-note">购买「白日梦蓝」棋盘皮肤可用</div>
+    </div>
+    <button class="btn-shop" onclick="alert('跳转至游戏内商城')">进入游戏查看棋盘皮肤 →</button>
+  </div>
 
 </div>
 
@@ -626,6 +1237,353 @@ const observer = new IntersectionObserver(entries => {
   });
 }, { threshold: 0.1 });
 reveals.forEach(el => observer.observe(el));
-<\/script>
+
+// ════════════════════════════════════
+// GAME ENGINE
+// ════════════════════════════════════
+
+let currentStep = 1;
+
+function updateStepIndicator(step) {
+  for (let i = 1; i <= 4; i++) {
+    const node = document.getElementById('si' + i);
+    const line = document.getElementById('sl' + i);
+    const label = document.getElementById('sl-' + i);
+    node.className = 'si-node' + (i < step ? ' done' : i === step ? ' active' : '');
+    if (line) line.className = 'si-line' + (i < step ? ' done' : '');
+    if (label) label.className = 'si-label' + (i === step ? ' active' : '');
+  }
+}
+
+function goToStep(n) {
+  document.querySelectorAll('.game-step').forEach(el => el.classList.remove('active'));
+  currentStep = n;
+  updateStepIndicator(n);
+  if (n <= 4) {
+    document.getElementById('gs' + n).classList.add('active');
+    if (n === 2) initWire();
+    if (n === 3) initColor();
+    if (n === 4) initKiln();
+  }
+  // Scroll game into view
+  document.getElementById('page2').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+// ── STEP 1: DRAW ──
+const drawCanvas = document.getElementById('draw-canvas');
+const drawCtx = drawCanvas.getContext('2d');
+let isDrawing = false;
+let drawPoints = 0;
+const DRAW_TARGET = 100;
+
+drawCtx.strokeStyle = 'rgba(42,95,158,0.7)';
+drawCtx.lineWidth = 4;
+drawCtx.lineCap = 'round';
+drawCtx.lineJoin = 'round';
+
+function getDrawPos(e) {
+  const rect = drawCanvas.getBoundingClientRect();
+  const sx = drawCanvas.width / rect.width;
+  const sy = drawCanvas.height / rect.height;
+  const src = e.touches ? e.touches[0] : e;
+  return { x: (src.clientX - rect.left) * sx, y: (src.clientY - rect.top) * sy };
+}
+
+drawCanvas.addEventListener('mousedown', e => {
+  isDrawing = true; drawCtx.beginPath();
+  const p = getDrawPos(e); drawCtx.moveTo(p.x, p.y);
+});
+drawCanvas.addEventListener('mousemove', e => {
+  if (!isDrawing) return;
+  const p = getDrawPos(e); drawCtx.lineTo(p.x, p.y); drawCtx.stroke();
+  drawPoints++; updateDrawProgress();
+});
+drawCanvas.addEventListener('mouseup', () => isDrawing = false);
+drawCanvas.addEventListener('touchstart', e => {
+  e.preventDefault(); isDrawing = true; drawCtx.beginPath();
+  const p = getDrawPos(e); drawCtx.moveTo(p.x, p.y);
+}, {passive:false});
+drawCanvas.addEventListener('touchmove', e => {
+  e.preventDefault(); if (!isDrawing) return;
+  const p = getDrawPos(e); drawCtx.lineTo(p.x, p.y); drawCtx.stroke();
+  drawPoints++; updateDrawProgress();
+}, {passive:false});
+drawCanvas.addEventListener('touchend', () => isDrawing = false);
+
+function updateDrawProgress() {
+  const pct = Math.min(100, Math.floor(drawPoints / DRAW_TARGET * 100));
+  document.getElementById('draw-bar').style.width = pct + '%';
+  document.getElementById('draw-pct').textContent = pct + '%';
+  if (pct >= 100) {
+    document.getElementById('btn-next-1').classList.add('ready');
+    document.getElementById('draw-hint').textContent = '描绘完成！✓';
+  }
+}
+
+// ── STEP 2: WIRE ──
+const wireNames = ['刀头', '刀身', '中心', '柄', '握把'];
+let wireFilled = 0;
+let draggingIdx = null;
+let ghostEl = null;
+
+function initWire() {
+  wireFilled = 0;
+  document.getElementById('wire-bar').style.width = '0%';
+  document.getElementById('wire-pct').textContent = '0 / 5';
+  document.getElementById('btn-next-2').classList.remove('ready');
+  // Reset drop zones
+  for (let i = 0; i < 5; i++) {
+    const dz = document.getElementById('dz' + i);
+    dz.classList.remove('filled', 'highlight');
+    dz.querySelector('.dz-label').textContent = wireNames[i];
+  }
+  // Build tray
+  const tray = document.getElementById('wire-tray');
+  tray.innerHTML = '';
+  wireNames.forEach((name, i) => {
+    const piece = document.createElement('div');
+    piece.className = 'wire-piece';
+    piece.textContent = name + ' · 金丝';
+    piece.dataset.idx = i;
+    piece.addEventListener('touchstart', e => startDrag(e, i, piece), {passive:false});
+    piece.addEventListener('mousedown', e => startDrag(e, i, piece));
+    tray.appendChild(piece);
+  });
+  // Create ghost
+  if (!document.getElementById('drag-ghost')) {
+    const g = document.createElement('div');
+    g.id = 'drag-ghost';
+    document.body.appendChild(g);
+  }
+  ghostEl = document.getElementById('drag-ghost');
+}
+
+function startDrag(e, idx, el) {
+  e.preventDefault();
+  draggingIdx = idx;
+  el.classList.add('dragging');
+  ghostEl.textContent = wireNames[idx] + ' · 金丝';
+  ghostEl.style.display = 'block';
+  // Highlight matching zone
+  document.getElementById('dz' + idx).classList.add('highlight');
+  moveGhost(e);
+  document.addEventListener('mousemove', moveGhost);
+  document.addEventListener('touchmove', moveGhost, {passive:false});
+  document.addEventListener('mouseup', endDrag);
+  document.addEventListener('touchend', endDrag);
+}
+
+function moveGhost(e) {
+  e.preventDefault && e.preventDefault();
+  const src = e.touches ? e.touches[0] : e;
+  ghostEl.style.left = src.clientX + 'px';
+  ghostEl.style.top = src.clientY + 'px';
+}
+
+function endDrag(e) {
+  if (draggingIdx === null) return;
+  const src = e.changedTouches ? e.changedTouches[0] : e;
+  ghostEl.style.display = 'none';
+  document.removeEventListener('mousemove', moveGhost);
+  document.removeEventListener('touchmove', moveGhost);
+  document.removeEventListener('mouseup', endDrag);
+  document.removeEventListener('touchend', endDrag);
+  // Check if dropped on correct zone
+  const dz = document.getElementById('dz' + draggingIdx);
+  const rect = dz.getBoundingClientRect();
+  const inZone = src.clientX >= rect.left && src.clientX <= rect.right &&
+                 src.clientY >= rect.top && src.clientY <= rect.bottom;
+  dz.classList.remove('highlight');
+  if (inZone && !dz.classList.contains('filled')) {
+    dz.classList.add('filled');
+    // Mark piece as used
+    const piece = document.querySelector(`.wire-piece[data-idx="${draggingIdx}"]`);
+    if (piece) piece.classList.add('used');
+    wireFilled++;
+    const pct = Math.floor(wireFilled / 5 * 100);
+    document.getElementById('wire-bar').style.width = pct + '%';
+    document.getElementById('wire-pct').textContent = wireFilled + ' / 5';
+    document.getElementById('wire-hint').textContent = wireFilled < 5
+      ? `已放置 ${wireFilled} / 5 · 继续拖拽`
+      : '掐丝完成！✓';
+    if (wireFilled >= 5) document.getElementById('btn-next-2').classList.add('ready');
+  } else {
+    document.getElementById('wire-hint').textContent = '放错位置了，再试试 ✕';
+    setTimeout(() => document.getElementById('wire-hint').textContent = '拖拽金丝放到铲子对应区域', 1200);
+  }
+  // Un-drag piece
+  const piece = document.querySelector(`.wire-piece[data-idx="${draggingIdx}"]`);
+  if (piece) piece.classList.remove('dragging');
+  draggingIdx = null;
+}
+
+// ── STEP 3: COLOR ──
+const enamelColors = [
+  { hex: '#2a5f9e', name: '宝钴蓝' },
+  { hex: '#1e8c7a', name: '孔雀绿' },
+  { hex: '#5aaed0', name: '湖蓝' },
+  { hex: '#b83828', name: '石榴红' },
+  { hex: '#c8a84b', name: '鎏金' },
+  { hex: '#2a3a6e', name: '深夜蓝' },
+];
+let selectedColor = null;
+let colorFilled = 0;
+
+function initColor() {
+  colorFilled = 0;
+  selectedColor = null;
+  document.getElementById('color-bar').style.width = '0%';
+  document.getElementById('color-pct').textContent = '0 / 6';
+  document.getElementById('btn-next-3').classList.remove('ready');
+  // Reset regions
+  for (let i = 0; i < 6; i++) {
+    const r = document.getElementById('cr' + i);
+    if (r) {
+      r.setAttribute('fill', '#e8e0d0');
+      r.classList.remove('filled');
+    }
+  }
+  // Build palette
+  const pal = document.getElementById('color-palette');
+  pal.innerHTML = '';
+  enamelColors.forEach((c, i) => {
+    const dot = document.createElement('div');
+    dot.className = 'color-dot';
+    dot.style.background = c.hex;
+    dot.onclick = () => {
+      document.querySelectorAll('.color-dot').forEach(d => d.classList.remove('selected'));
+      dot.classList.add('selected');
+      selectedColor = c;
+      document.getElementById('color-name').textContent = '已选：' + c.name;
+    };
+    pal.appendChild(dot);
+  });
+}
+
+function fillRegion(idx) {
+  if (!selectedColor) {
+    document.getElementById('color-hint').textContent = '请先选择色料！';
+    setTimeout(() => document.getElementById('color-hint').textContent = '选色料，点击区域填入珐琅', 1200);
+    return;
+  }
+  // Handle group element (cr5)
+  const el = document.getElementById('cr' + idx);
+  if (!el || el.classList.contains('filled')) return;
+  // Fill all child shapes
+  if (el.tagName === 'g') {
+    el.querySelectorAll('rect, path').forEach(child => {
+      child.setAttribute('fill', selectedColor.hex);
+      child.setAttribute('fill-opacity', '0.85');
+    });
+  } else {
+    el.setAttribute('fill', selectedColor.hex);
+    el.setAttribute('fill-opacity', '0.85');
+  }
+  el.classList.add('filled');
+  colorFilled++;
+  const pct = Math.floor(colorFilled / 6 * 100);
+  document.getElementById('color-bar').style.width = pct + '%';
+  document.getElementById('color-pct').textContent = colorFilled + ' / 6';
+  if (colorFilled >= 6) {
+    document.getElementById('btn-next-3').classList.add('ready');
+    document.getElementById('color-hint').textContent = '点蓝完成！✓';
+  }
+}
+
+// ── STEP 4: KILN ──
+let kilnRAF = null;
+let needlePos = 0;
+let needleDir = 1;
+let needleSpeed = 0;
+let kilnHits = 0;
+let kilnRunning = false;
+const KILN_REQUIRED = 3;
+
+function initKiln() {
+  kilnHits = 0;
+  kilnRunning = true;
+  needlePos = 0;
+  needleSpeed = (1.5 + Math.random() * 1.5) * (Math.random() > 0.5 ? 1 : -1);
+  document.getElementById('kiln-feedback').textContent = '';
+  document.getElementById('kiln-feedback').className = 'kiln-feedback';
+  document.getElementById('kiln-temp-label').textContent = '烧制中';
+  // Build fire dots
+  const dotsWrap = document.getElementById('fire-dots');
+  dotsWrap.innerHTML = '';
+  for (let i = 0; i < KILN_REQUIRED; i++) {
+    const d = document.createElement('div');
+    d.className = 'fire-dot';
+    d.id = 'fd' + i;
+    dotsWrap.appendChild(d);
+  }
+  // Set fire zone (random position, 15% wide)
+  const zoneLeft = 20 + Math.random() * 50; // 20–70%
+  const zoneWidth = 14;
+  const fz = document.getElementById('fire-zone');
+  fz.style.left = zoneLeft + '%';
+  fz.style.width = zoneWidth + '%';
+  fz.dataset.left = zoneLeft;
+  fz.dataset.right = zoneLeft + zoneWidth;
+  animateNeedle();
+}
+
+function animateNeedle() {
+  if (!kilnRunning) return;
+  needlePos += needleSpeed;
+  if (needlePos >= 96 || needlePos <= 0) {
+    needleDir *= -1;
+    needleSpeed *= -1;
+    // Random speed change on bounce
+    needleSpeed = (1.5 + Math.random() * 2) * (needleSpeed > 0 ? 1 : -1);
+  }
+  document.getElementById('fire-needle').style.left = Math.max(0, Math.min(96, needlePos)) + '%';
+  kilnRAF = requestAnimationFrame(animateNeedle);
+}
+
+function tapKiln() {
+  if (!kilnRunning) return;
+  const fz = document.getElementById('fire-zone');
+  const zLeft = parseFloat(fz.dataset.left);
+  const zRight = parseFloat(fz.dataset.right);
+  const feedback = document.getElementById('kiln-feedback');
+  if (needlePos >= zLeft && needlePos <= zRight) {
+    // HIT
+    document.getElementById('fd' + kilnHits).classList.add('lit');
+    kilnHits++;
+    feedback.textContent = kilnHits < KILN_REQUIRED ? '命中！继续烧制 🔥' : '';
+    feedback.className = 'kiln-feedback hit';
+    if (kilnHits >= KILN_REQUIRED) {
+      kilnRunning = false;
+      cancelAnimationFrame(kilnRAF);
+      document.getElementById('kiln-temp-label').textContent = '烧制完成 ✓';
+      document.getElementById('kiln-hint').textContent = '千火成蓝！✓';
+      setTimeout(showDone, 1200);
+    } else {
+      // Move zone to new position
+      const newLeft = 15 + Math.random() * 55;
+      fz.style.left = newLeft + '%';
+      fz.dataset.left = newLeft;
+      fz.dataset.right = newLeft + 14;
+      // Speed up slightly
+      needleSpeed = (2 + Math.random() * 2) * (needleSpeed > 0 ? 1 : -1);
+    }
+  } else {
+    // MISS
+    feedback.textContent = '未命中，再试！';
+    feedback.className = 'kiln-feedback miss';
+    setTimeout(() => { feedback.textContent = ''; }, 800);
+  }
+}
+
+function showDone() {
+  document.querySelectorAll('.game-step').forEach(el => el.classList.remove('active'));
+  document.getElementById('step-indicator').style.display = 'none';
+  document.querySelector('.si-label-row') && (document.querySelector('.si-label-row').style.display = 'none');
+  document.querySelector('.page2-header').style.display = 'none';
+  const done = document.getElementById('done-page');
+  done.classList.add('active');
+}
+
+</script>
 </body>
 </html>
