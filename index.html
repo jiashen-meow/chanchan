@@ -1499,11 +1499,16 @@ let kilnHits = 0;
 let kilnRunning = false;
 const KILN_REQUIRED = 3;
 
+// Zone widths per hit: wide → medium → narrow
+const ZONE_WIDTHS = [28, 18, 10];
+// Needle speeds per hit: slow → medium → fast
+const NEEDLE_SPEEDS = [0.4, 0.65, 0.9];
+
 function initKiln() {
   kilnHits = 0;
   kilnRunning = true;
   needlePos = 0;
-  needleSpeed = (1.5 + Math.random() * 1.5) * (Math.random() > 0.5 ? 1 : -1);
+  needleSpeed = NEEDLE_SPEEDS[0] * (Math.random() > 0.5 ? 1 : -1);
   document.getElementById('kiln-feedback').textContent = '';
   document.getElementById('kiln-feedback').className = 'kiln-feedback';
   document.getElementById('kiln-temp-label').textContent = '烧制中';
@@ -1516,25 +1521,29 @@ function initKiln() {
     d.id = 'fd' + i;
     dotsWrap.appendChild(d);
   }
-  // Set fire zone (random position, 15% wide)
-  const zoneLeft = 20 + Math.random() * 50; // 20–70%
-  const zoneWidth = 14;
+  setFireZone(0);
+  animateNeedle();
+}
+
+function setFireZone(hitNum) {
+  const zoneWidth = ZONE_WIDTHS[Math.min(hitNum, ZONE_WIDTHS.length - 1)];
+  const maxLeft = 88 - zoneWidth;
+  const zoneLeft = 6 + Math.random() * maxLeft;
   const fz = document.getElementById('fire-zone');
   fz.style.left = zoneLeft + '%';
   fz.style.width = zoneWidth + '%';
   fz.dataset.left = zoneLeft;
   fz.dataset.right = zoneLeft + zoneWidth;
-  animateNeedle();
 }
 
 function animateNeedle() {
   if (!kilnRunning) return;
   needlePos += needleSpeed;
   if (needlePos >= 96 || needlePos <= 0) {
-    needleDir *= -1;
     needleSpeed *= -1;
-    // Random speed change on bounce
-    needleSpeed = (1.5 + Math.random() * 2) * (needleSpeed > 0 ? 1 : -1);
+    // Small random variation on bounce, but stay within current speed tier
+    const base = NEEDLE_SPEEDS[Math.min(kilnHits, NEEDLE_SPEEDS.length - 1)];
+    needleSpeed = (base + Math.random() * 0.15) * (needleSpeed > 0 ? 1 : -1);
   }
   document.getElementById('fire-needle').style.left = Math.max(0, Math.min(96, needlePos)) + '%';
   kilnRAF = requestAnimationFrame(animateNeedle);
@@ -1559,13 +1568,11 @@ function tapKiln() {
       document.getElementById('kiln-hint').textContent = '千火成蓝！✓';
       setTimeout(showDone, 1200);
     } else {
-      // Move zone to new position
-      const newLeft = 15 + Math.random() * 55;
-      fz.style.left = newLeft + '%';
-      fz.dataset.left = newLeft;
-      fz.dataset.right = newLeft + 14;
-      // Speed up slightly
-      needleSpeed = (2 + Math.random() * 2) * (needleSpeed > 0 ? 1 : -1);
+      // Move zone to next difficulty
+      setFireZone(kilnHits);
+      // Step up needle speed
+      const newBase = NEEDLE_SPEEDS[Math.min(kilnHits, NEEDLE_SPEEDS.length - 1)];
+      needleSpeed = (newBase + Math.random() * 0.15) * (needleSpeed > 0 ? 1 : -1);
     }
   } else {
     // MISS
